@@ -5,7 +5,7 @@ const ctx = canvas.getContext('2d');
 let gameRunning = true;
 let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
-let gameSpeed = 2.5; // SLOWER START
+let gameSpeed = 4.0; // SLOWER START
 
 // Player - BIGGER & BETTER JUMP
 const player = {
