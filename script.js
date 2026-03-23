@@ -5,7 +5,7 @@ const ctx = canvas.getContext('2d');
 let gameRunning = true;
 let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
-let gameSpeed = 4.0; // SLOWER START
+let gameSpeed = 1.5; // SLOWER START
 
 // Player - BIGGER & BETTER JUMP
 const player = {
@@ -14,7 +14,7 @@ const player = {
     width: 50, // BIGGER HITBOX
     height: 60,
     vy: 0,
-    gravity: 0.3, // GENTLER GRAVITY
+    gravity: 1.0, // GENTLER GRAVITY
     jumpPower: -14, // STRONGER JUMP
     grounded: false
 };
