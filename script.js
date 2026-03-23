@@ -1,30 +1,64 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// RESPONSIVE CANVAS SIZING
+let GAME_WIDTH = 800;
+let GAME_HEIGHT = 400;
+let scaleX = 1;
+let scaleY = 1;
+
+function resizeCanvas() {
+    const maxWidth = window.innerWidth * 0.95;
+    const maxHeight = window.innerHeight * 0.7;
+    
+    const targetWidth = Math.min(GAME_WIDTH, maxWidth);
+    const targetHeight = Math.min(GAME_HEIGHT, maxHeight);
+    
+    const aspectRatio = GAME_WIDTH / GAME_HEIGHT;
+    
+    if (targetWidth / targetHeight > aspectRatio) {
+        canvas.height = targetHeight;
+        canvas.width = targetHeight * aspectRatio;
+    } else {
+        canvas.width = targetWidth;
+        canvas.height = targetWidth / aspectRatio;
+    }
+    
+    scaleX = canvas.width / GAME_WIDTH;
+    scaleY = canvas.height / GAME_HEIGHT;
+    
+    // Scale context for crisp rendering
+    ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+}
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100);
+});
+resizeCanvas();
+
 // Game state - MEDIUM DIFFICULTY
 let gameRunning = true;
 let score = 0;
 let highScore = localStorage.getItem('highScore') || 0;
-let gameSpeed = 3.2; // MEDIUM START (Easy:2.5, Hard:3.5)
+let gameSpeed = 3.2;
 
-// Player - BALANCED
+// Player - SCALED FOR MOBILE
 const player = {
-    x: 110, // SLIGHTLY CLOSER
+    x: 110,
     y: 300,
-    width: 45, // SLIGHTLY SMALLER
+    width: 45,
     height: 60,
     vy: 0,
-    gravity: 0.7, // MEDIUM GRAVITY (Easy:0.6, Hard:0.85)
-    jumpPower: -17, // MEDIUM JUMP (Easy:-18, Hard:-15)
+    gravity: 0.7,
+    jumpPower: -17,
     grounded: false
 };
 
-// Obstacles - MEDIUM FREQUENCY & SIZE
 let obstacles = [];
 let obstacleTimer = 0;
 let groundOffset = 0;
 
-// Input handling
 let keys = {};
 
 document.addEventListener('keydown', (e) => {
@@ -35,14 +69,17 @@ document.addEventListener('keyup', (e) => {
     keys[e.code] = false;
 });
 
-canvas.addEventListener('click', jump);
-canvas.addEventListener('touchstart', (e) => {
+// MOBILE TOUCH - FULL SCREEN DETECTION
+canvas.addEventListener('touchstart', handleTouch, { passive: false });
+canvas.addEventListener('click', handleTouch);
+
+function handleTouch(e) {
     e.preventDefault();
     jump();
-});
+}
 
 function jump() {
-    if (player.grounded) {
+    if (player.grounded && gameRunning) {
         player.vy = player.jumpPower;
         player.grounded = false;
     }
@@ -53,7 +90,6 @@ document.getElementById('highScore').textContent = highScore;
 function update() {
     if (!gameRunning) return;
 
-    // Player physics
     if (keys['Space'] && player.grounded) {
         jump();
     }
@@ -61,35 +97,31 @@ function update() {
     player.vy += player.gravity;
     player.y += player.vy;
 
-    // Ground collision
-    if (player.y + player.height > 295) { // MEDIUM FORGIVING
+    if (player.y + player.height > 295) {
         player.y = 295 - player.height;
         player.vy = 0;
         player.grounded = true;
     }
 
-    // Generate obstacles - MEDIUM SPAWNING RATE
     obstacleTimer++;
-    if (obstacleTimer > 100 - Math.min(score / 15, 40)) { // MEDIUM RATE
-        // 50% regular obstacle, 50% double obstacle
+    if (obstacleTimer > 100 - Math.min(score / 15, 40)) {
         if (Math.random() < 0.3) {
-            // DOUBLE OBSTACLE (new challenge!)
+            // DOUBLE OBSTACLE
             obstacles.push({
-                x: canvas.width,
+                x: GAME_WIDTH,
                 y: 300 - Math.random() * 25 - 20,
                 width: 22,
                 height: 25 + Math.random() * 25
             });
             obstacles.push({
-                x: canvas.width + 35,
+                x: GAME_WIDTH + 35,
                 y: 300 - Math.random() * 25 - 20,
                 width: 22,
                 height: 25 + Math.random() * 25
             });
         } else {
-            // Regular obstacle
             obstacles.push({
-                x: canvas.width,
+                x: GAME_WIDTH,
                 y: 300 - Math.random() * 35 - 20,
                 width: 28 + Math.random() * 12,
                 height: 28 + Math.random() * 35
@@ -98,20 +130,18 @@ function update() {
         obstacleTimer = 0;
     }
 
-    // Update obstacles
     for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= gameSpeed;
         if (obstacles[i].x + obstacles[i].width < 0) {
             obstacles.splice(i, 1);
             score++;
-            gameSpeed += 0.007; // MEDIUM SPEED INCREASE
+            gameSpeed += 0.007;
             document.getElementById('score').textContent = score;
         }
     }
 
-    // Collision detection - MEDIUM TIGHTNESS
+    const buffer = 3;
     for (let obs of obstacles) {
-        const buffer = 3; // MEDIUM BUFFER (Easy:5, Hard:0)
         if (player.x + buffer < obs.x + obs.width &&
             player.x + player.width - buffer > obs.x &&
             player.y + buffer < obs.y + obs.height &&
@@ -126,7 +156,7 @@ function update() {
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
     // Clouds
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -140,11 +170,11 @@ function draw() {
 
     // Ground
     ctx.fillStyle = '#8B4513';
-    ctx.fillRect(0, 330, canvas.width, 70);
+    ctx.fillRect(0, 330, GAME_WIDTH, 70);
 
     // Ground pattern
     ctx.fillStyle = '#A0522D';
-    for (let i = 0; i < canvas.width; i += 50) {
+    for (let i = 0; i < GAME_WIDTH; i += 50) {
         ctx.fillRect(i + groundOffset, 340, 40, 20);
     }
 
@@ -152,7 +182,7 @@ function draw() {
     ctx.fillStyle = '#4CAF50';
     ctx.fillRect(player.x, player.y, player.width, player.height);
 
-    // Player details - HAPPY FACE
+    // Player details
     ctx.fillStyle = '#2E7D32';
     ctx.fillRect(player.x + 8, player.y + 8, player.width - 16, 22);
     ctx.fillStyle = 'white';
@@ -161,21 +191,23 @@ function draw() {
     ctx.fillStyle = '#FFEB3B';
     ctx.fillRect(player.x + 18, player.y + 28, 14, 6);
 
-    // Obstacles - SPIKY & SCARY
+    // Obstacles
     ctx.fillStyle = '#F44336';
     for (let obs of obstacles) {
         ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
         ctx.fillStyle = '#D32F2F';
         ctx.fillRect(obs.x + 3, obs.y + 3, obs.width - 6, obs.height - 6);
         ctx.fillStyle = '#B71C1C';
-        ctx.fillRect(obs.x + 8, obs.y, 4, 10); // spike
-        ctx.fillRect(obs.x + obs.width - 12, obs.y, 4, 10); // spike
+        ctx.fillRect(obs.x + 8, obs.y, 4, 10);
+        ctx.fillRect(obs.x + obs.width - 12, obs.y, 4, 10);
     }
 
-    // Instructions
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    // Instructions (scaled)
+    ctx.save();
     ctx.font = 'bold 18px Arial';
-    ctx.fillText('SPACEBAR or CLICK/TAP to Jump!', 10, 25);
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillText('SPACEBAR or TAP to Jump!', 10, 25);
+    ctx.restore();
 }
 
 function gameLoop() {
@@ -198,7 +230,7 @@ function gameOver() {
 function restartGame() {
     gameRunning = true;
     score = 0;
-    gameSpeed = 3.2; // RESET TO MEDIUM
+    gameSpeed = 3.2;
     player.y = 300 - player.height;
     player.vy = 0;
     player.grounded = true;
@@ -209,5 +241,4 @@ function restartGame() {
     document.getElementById('gameOver').style.display = 'none';
 }
 
-// Start the game
 gameLoop();
