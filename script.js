@@ -15,7 +15,7 @@ const player = {
     height: 60,
     vy: 0,
     gravity: 0.6, // GENTLER GRAVITY
-    jumpPower: -18, // STRONGER JUMP
+    jumpPower: -14, // STRONGER JUMP
     grounded: false
 };
 
