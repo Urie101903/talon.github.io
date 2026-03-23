@@ -14,7 +14,7 @@ const player = {
     width: 50, // BIGGER HITBOX
     height: 60,
     vy: 0,
-    gravity: 0.6, // GENTLER GRAVITY
+    gravity: 0.3, // GENTLER GRAVITY
     jumpPower: -14, // STRONGER JUMP
     grounded: false
 };
