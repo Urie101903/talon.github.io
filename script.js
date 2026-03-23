@@ -9,14 +9,14 @@ let gameSpeed = 5.0; // SLOWER START
 
 // Player - BIGGER & BETTER JUMP
 const player = {
-    x: 120, // FURTHER FROM EDGE
-    y: 300,
-    width: 50, // BIGGER HITBOX
-    height: 60,
-    vy: 0,
-    gravity: 0.1, // GENTLER GRAVITY
-    jumpPower: -12, // STRONGER JUMP
-    grounded: false
+   x: 120, // FURTHER FROM EDGE
+            y: 300,
+            width: 50, // BIGGER HITBOX
+            height: 60,
+            vy: 0,
+            gravity: 0.6, // GENTLER GRAVITY (was 0.8)
+            jumpPower: -12, // STRONGER JUMP (was -16)
+            grounded: false
 };
 
 // Obstacles - LESS FREQUENT & SMALLER
