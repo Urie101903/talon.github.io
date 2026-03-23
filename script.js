@@ -34,31 +34,29 @@ window.addEventListener('resize', resizeCanvas);
 window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
 resizeCanvas();
 
-// 😈 IMPOSSIBLE MODE - PURE HELL
+// 🔥 HARD MODE - EXTREME SETTINGS
 let gameRunning = true;
 let score = 0;
-let highScore = localStorage.getItem('impossibleHighScore') || 0;
-let gameSpeed = 5.5; // INSANE STARTING SPEED
+let highScore = localStorage.getItem('highScore') || 0;
+let gameSpeed = 3.8; // FAST START
 
-// Player - TINY & DOOMED
+// Player - SMALLER & FASTER FALL
 const player = {
-    x: 90, // WAY TOO CLOSE
+    x: 100, // CLOSER TO EDGE
     y: 300,
-    width: 32, // MICROSCOPIC
-    height: 48, // TINY
+    width: 40, // SMALLER TARGET
+    height: 55, // SHORTER
     vy: 0,
-    gravity: 1.2, // ANVIL GRAVITY
-    jumpPower: -12, // PATHETIC JUMP
+    gravity: 0.9, // HEAVY GRAVITY
+    jumpPower: -15, // WEAKER JUMP
     grounded: false
 };
 
 let obstacles = [];
 let obstacleTimer = 0;
 let groundOffset = 0;
-
-// IMPOSSIBLE PATTERNS
-let apocalypseMode = false;
-let obstacleDensity = 0.9; // 90% OBSTACLE SCREEN COVERAGE
+let doubleJumpChance = 0.5; // 50% DOUBLE OBSTACLES
+let tripleJumpChance = 0.2; // 20% TRIPLE JUMPS
 
 let keys = {};
 
@@ -95,59 +93,39 @@ function update() {
     player.vy += player.gravity;
     player.y += player.vy;
 
-    // NO MERCY GROUND
-    if (player.y + player.height > 305) {
-        player.y = 305 - player.height;
-        player.vy *= 0.3; // BOUNCE DAMPENING
+    // TIGHTER GROUND COLLISION
+    if (player.y + player.height > 302) {
+        player.y = 302 - player.height;
+        player.vy = 0;
         player.grounded = true;
     }
 
-    // OBSTACLE APOCALYPSE
+    // FASTER OBSTACLE SPAWNING
     obstacleTimer++;
-    const spawnRate = 40 - Math.min(score / 8, 30); // SPAWN EVERY 10-40 FRAMES
+    const spawnRate = 75 - Math.min(score / 12, 45);
     if (obstacleTimer > spawnRate) {
         
-        // RANDOM DOOM PATTERNS
-        const pattern = Math.random();
-        
-        if (pattern < 0.4) {
-            // WALL OF DEATH (4 obstacles)
-            for (let i = 0; i < 4; i++) {
-                obstacles.push({
-                    x: GAME_WIDTH + i * 22,
-                    y: 300 - Math.random() * 10 - 15,
-                    width: 18,
-                    height: 50 + Math.random() * 40
-                });
-            }
-        } else if (pattern < 0.7) {
-            // VERTICAL WALL
-            obstacles.push({
-                x: GAME_WIDTH,
-                y: 150,
-                width: 25,
-                height: 190 // FULL HEIGHT!
-            });
-        } else if (pattern < 0.85) {
-            // LOW SKINNY FAST ONES
-            for (let i = 0; i < 3; i++) {
-                obstacles.push({
-                    x: GAME_WIDTH + i * 28,
-                    y: 280,
-                    width: 15,
-                    height: 35
-                });
-            }
+        // INCREASED DIFFICULTY PATTERNS
+        const rand = Math.random();
+        if (rand < tripleJumpChance) {
+            // TRIPLE OBSTACLE - INSANE!
+            obstacles.push({ x: GAME_WIDTH, y: 300 - 15 - 20, width: 20, height: 35 });
+            obstacles.push({ x: GAME_WIDTH + 28, y: 300 - 15 - 20, width: 20, height: 35 });
+            obstacles.push({ x: GAME_WIDTH + 56, y: 300 - 15 - 20, width: 20, height: 35 });
+        } else if (rand < doubleJumpChance) {
+            // DOUBLE OBSTACLE
+            obstacles.push({ x: GAME_WIDTH, y: 300 - Math.random() * 20 - 25, width: 24, height: 30 + Math.random() * 30 });
+            obstacles.push({ x: GAME_WIDTH + 32, y: 300 - Math.random() * 20 - 25, width: 24, height: 30 + Math.random() * 30 });
         } else {
-            // RANDOM HELL
+            // FAST/SKINNY obstacles
             obstacles.push({
                 x: GAME_WIDTH,
-                y: 300 - Math.random() * 50 - 10,
-                width: 20 + Math.random() * 15,
-                height: 45 + Math.random() * 60
+                y: 300 - Math.random() * 40 - 15,
+                width: 22 + Math.random() * 18, // NARROWER
+                height: 35 + Math.random() * 45 // TALLER
             });
         }
-        obstacleTimer = Math.max(5, spawnRate * 0.6); // EVEN FASTER
+        obstacleTimer = 0;
     }
 
     // Update obstacles
@@ -156,17 +134,15 @@ function update() {
         if (obstacles[i].x + obstacles[i].width < 0) {
             obstacles.splice(i, 1);
             score++;
-            // EXPONENTIAL SPEED HELL
-            gameSpeed += 0.025 + (score * 0.0003);
-            gameSpeed = Math.min(gameSpeed, 12); // SPEED CAP (still insane)
+            // ACCELERATING SPEED CURVE
+            gameSpeed += 0.012 + (score * 0.0001);
+            doubleJumpChance = Math.min(0.65, 0.4 + score * 0.0008);
+            tripleJumpChance = Math.min(0.35, 0.15 + score * 0.0005);
             document.getElementById('score').textContent = score;
-            
-            // APOCALYPSE AFTER 50
-            if (score > 50) apocalypseMode = true;
         }
     }
 
-    // DEATH ON CONTACT
+    // PRECISE COLLISION - NO BUFFER
     for (let obs of obstacles) {
         if (player.x < obs.x + obs.width &&
             player.x + player.width > obs.x &&
@@ -177,97 +153,73 @@ function update() {
         }
     }
 
-    // AUTO-KILL AFTER 100 (TRULY IMPOSSIBLE)
-    if (score > 100) {
-        gameOver();
-        return;
-    }
-
-    groundOffset -= gameSpeed * 1.5;
+    groundOffset -= gameSpeed;
     if (groundOffset < -50) groundOffset = 0;
 }
 
 function draw() {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // BLOOD RED CLOUDS
-    ctx.fillStyle = 'rgba(220, 50, 50, 0.6)';
-    for (let i = 0; i < 6; i++) {
+    // FASTER CLOUDS
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    for (let i = 0; i < 5; i++) {
         ctx.beginPath();
-        ctx.arc(100 + i * 160 - (score * 1.2) % 160, 70 + Math.sin(score * 0.02 + i) * 12, 25, 0, Math.PI * 2);
-        ctx.arc(130 + i * 160 - (score * 1.2) % 160, 70 + Math.sin(score * 0.02 + i) * 12, 35, 0, Math.PI * 2);
-        ctx.arc(160 + i * 160 - (score * 1.2) % 160, 70 + Math.sin(score * 0.02 + i) * 12, 25, 0, Math.PI * 2);
+        ctx.arc(100 + i * 200 - (score * 0.6) % 200, 80 + Math.sin(score * 0.01 + i) * 15, 28, 0, Math.PI * 2);
+        ctx.arc(130 + i * 200 - (score * 0.6) % 200, 80 + Math.sin(score * 0.01 + i) * 15, 38, 0, Math.PI * 2);
+        ctx.arc(160 + i * 200 - (score * 0.6) % 200, 80 + Math.sin(score * 0.01 + i) * 15, 28, 0, Math.PI * 2);
         ctx.fill();
     }
 
-    // CRACKED GROUND
-    ctx.fillStyle = '#5D2E0A';
-    ctx.fillRect(0, 330, GAME_WIDTH, 70);
+    // Ground
     ctx.fillStyle = '#8B4513';
-    ctx.fillRect(0, 335, GAME_WIDTH, 60);
+    ctx.fillRect(0, 330, GAME_WIDTH, 70);
 
-    // CHAOTIC GROUND PATTERN
+    // Ground pattern - FASTER
     ctx.fillStyle = '#A0522D';
-    for (let i = 0; i < GAME_WIDTH; i += 35) {
-        ctx.fillRect(i + groundOffset, 345, 30, 15);
+    for (let i = 0; i < GAME_WIDTH; i += 45) {
+        ctx.fillRect(i + groundOffset, 340, 38, 18);
     }
 
-    // DOOMED PLAYER - TERRIFIED
-    ctx.fillStyle = '#1B5E20'; // DARK GREEN
+    // Player - TENSE EXPRESSION
+    ctx.fillStyle = '#388E3C';
     ctx.fillRect(player.x, player.y, player.width, player.height);
 
-    // PANIC FACE
+    // Player details - SWEATY & FOCUSED
     ctx.fillStyle = '#2E7D32';
-    ctx.fillRect(player.x + 6, player.y + 6, player.width - 12, 18);
-    ctx.fillStyle = '#FFEB3B'; // YELLOW EYES OF FEAR
-    ctx.fillRect(player.x + 10, player.y + 10, 6, 6);
-    ctx.fillRect(player.x + 25, player.y + 10, 6, 6);
-    ctx.fillStyle = '#8B0000'; // BLOOD MOUTH
-    ctx.fillRect(player.x + 14, player.y + 25, 12, 4);
-    
-    // TEARS OF DESPAIR
-    ctx.fillStyle = 'rgba(0,150,255,0.8)';
-    ctx.fillRect(player.x + 4, player.y + 8, 3, 5);
-    ctx.fillRect(player.x + player.width - 7, player.y + 8, 3, 5);
+    ctx.fillRect(player.x + 7, player.y + 7, player.width - 14, 20);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(player.x + 11, player.y + 11, 7, 7); // eye 1 - SMALLER
+    ctx.fillRect(player.x + 27, player.y + 11, 7, 7); // eye 2
+    ctx.fillStyle = '#FFEB3B';
+    ctx.fillRect(player.x + 16, player.y + 27, 13, 5); // tense mouth
+    // SWEAT DROPS
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillRect(player.x + 5, player.y + 5, 3, 6);
+    ctx.fillRect(player.x + player.width - 8, player.y + 5, 3, 6);
 
-    // DEMONIC OBSTACLES
-    ctx.fillStyle = '#8B0000';
+    // Obstacles - MENACING
+    ctx.fillStyle = '#D32F2F';
     for (let obs of obstacles) {
         ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
         ctx.fillStyle = '#B71C1C';
-        ctx.fillRect(obs.x + 1, obs.y + 1, obs.width - 2, obs.height - 2);
-        ctx.fillStyle = '#FF0000';
-        // HELL SPIKES
-        ctx.fillRect(obs.x + 4, obs.y, 6, 15);
-        ctx.fillRect(obs.x + obs.width - 10, obs.y, 6, 15);
-        if (obs.width > 25) {
-            ctx.fillRect(obs.x + obs.width/2 - 3, obs.y, 6, 12);
+        ctx.fillRect(obs.x + 2, obs.y + 2, obs.width - 4, obs.height - 4);
+        ctx.fillStyle = '#7F0000';
+        // MULTIPLE SPIKES
+        ctx.fillRect(obs.x + 6, obs.y, 5, 12);
+        ctx.fillRect(obs.x + obs.width - 11, obs.y, 5, 12);
+        if (obs.width > 30) {
+            ctx.fillRect(obs.x + obs.width/2 - 2, obs.y, 4, 10);
         }
-        // GLOW EFFECT
-        ctx.shadowColor = '#FF0000';
-        ctx.shadowBlur = 8;
-        ctx.fillRect(obs.x + obs.width/2 - 2, obs.y + obs.height - 8, 4, 8);
-    }
-    ctx.shadowBlur = 0;
-
-    // SPEED HELL BAR
-    ctx.fillStyle = 'rgba(255,0,0,0.6)';
-    ctx.fillRect(0, 0, Math.min(gameSpeed * 15, GAME_WIDTH), 25);
-
-    // APOCALYPSE WARNING
-    if (apocalypseMode) {
-        ctx.fillStyle = 'rgba(255,0,0,0.9)';
-        ctx.font = 'bold 24px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('APOCALYPSE MODE', GAME_WIDTH/2, 40);
     }
 
-    // IMPOSSIBLE WARNING
+    // SPEED INDICATOR
+    ctx.fillStyle = 'rgba(255,0,0,0.3)';
+    ctx.fillRect(0, 0, gameSpeed * 20, 20);
+
     ctx.save();
-    ctx.font = 'bold 14px Arial';
-    ctx.fillStyle = 'rgba(255,0,0,0.9)';
-    ctx.textAlign = 'left';
-    ctx.fillText('IMPOSSIBLE MODE', 10, GAME_HEIGHT - 20);
+    ctx.font = 'bold 16px Arial';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillText('HARD MODE - TAP to Jump!', 10, 22);
     ctx.restore();
 }
 
@@ -281,27 +233,19 @@ function gameOver() {
     gameRunning = false;
     if (score > highScore) {
         highScore = score;
-        localStorage.setItem('impossibleHighScore', highScore);
+        localStorage.setItem('highScore', highScore);
         document.getElementById('highScore').textContent = highScore;
     }
     document.getElementById('finalScore').textContent = score;
     document.getElementById('gameOver').style.display = 'block';
-    
-    // TAUNT PLAYER
-    if (score < 20) {
-        document.querySelector('.game-over h2').textContent = '😂 TOO EASY FOR IMPOSSIBLE!';
-    } else if (score < 50) {
-        document.querySelector('.game-over h2').textContent = '💀 NOT BAD... FOR A HUMAN';
-    } else {
-        document.querySelector('.game-over h2').textContent = '🔥 LEGEND! (' + score + ' pts)';
-    }
 }
 
 function restartGame() {
     gameRunning = true;
     score = 0;
-    gameSpeed = 5.5;
-    apocalypseMode = false;
+    gameSpeed = 3.8;
+    doubleJumpChance = 0.5;
+    tripleJumpChance = 0.2;
     player.y = 300 - player.height;
     player.vy = 0;
     player.grounded = true;
@@ -309,7 +253,6 @@ function restartGame() {
     obstacleTimer = 0;
     groundOffset = 0;
     document.getElementById('score').textContent = score;
-    document.querySelector('.game-over h2').textContent = 'Game Over!';
     document.getElementById('gameOver').style.display = 'none';
 }
 
