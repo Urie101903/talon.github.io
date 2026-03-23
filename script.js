@@ -11,8 +11,8 @@ let gameSpeed = 5.0; // SLOWER START
 const player = {
    x: 120, // FURTHER FROM EDGE
             y: 300,
-            width: 50, // BIGGER HITBOX
-            height: 60,
+            width: 30, // BIGGER HITBOX
+            height: 45,
             vy: 0,
             gravity: 0.6, // GENTLER GRAVITY (was 0.8)
             jumpPower: -12, // STRONGER JUMP (was -16)
